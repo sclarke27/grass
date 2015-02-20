@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+		<META HTTP-EQUIV="Expires" CONTENT="-1">		
+        <title> Watch the Grass Grow</title>
+        <link href='http://fonts.googleapis.com/css?family=Economica:400italic,700italic|Waiting+for+the+Sunrise|Walter+Turncoat|Comfortaa:300' rel='stylesheet' type='text/css'>
+		<style>
+			* {
+				padding: 0px;
+				margin: 0px;
+                font-family: 'Economica', sans-serif;
+                font-family: 'Waiting for the Sunrise', cursive;
+                font-family: 'Walter Turncoat', cursive;
+                font-family: 'Comfortaa', cursive;
+			}
+			body {
+                font-size: 12px;
+			}
+			canvas {
+				position: absolute;
+			}
+            h1 {
+                font-variant: small-caps;
+            }
+            
+            .animate, #insideFrame {
+                transition: 1.2s ease-in-out 0s;
+                
+            }
+            
+            .inactive input, .active-light input, .active-dark input, h1 {
+                transition: 0.3s ease-in-out 0s;
+                
+            }
+
+			#insideFrame {
+				position: relative;
+				margin: 50px auto;
+				width: 1200px;
+				height: 640px;
+                border-radius: 15px;
+			}
+            
+            .inactive input {
+                position: absolute;
+                left: 40%;
+                width: 250px;
+                height: 70px;
+                font-size: 22px;
+                font-family: arial;
+            }
+            
+            .inactive h1 {
+                position: absolute;
+                font-family: 'Walter Turncoat', cursive;
+                font-size: 36px;
+                text-align: center;
+                width: 100%;
+                top: 0px;
+
+            }
+            
+            .inactive p {
+                position: absolute;
+                text-align: center;
+                width: 100%;
+                top: 45px;
+                font-size: 20x;
+                font-family: arial;
+            }
+            
+            .active-light p, .active-dark p {
+                display: none;
+            }
+            
+            .active-light h1, .active-dark h1 {
+                position: absolute;
+                text-align: center;
+                width: 100%;
+                top: -35px;
+            }
+            
+            .active-light h1 {
+                color: #000033;
+            }
+            
+            .active-dark h1 {
+                color: #fefefe;
+            }
+            
+            .inactive input:nth-child(2){
+                top: 60px;
+            }
+            .inactive input:nth-child(3) {
+                top: 160px;
+            }
+
+            .active-dark input:nth-child(2) {
+                top: 50px;
+            }
+
+            .active-dark input:nth-child(3) {
+                top: 0px;
+				box-shadow: 0px 0px 5px rgba(255,255,255,.5);
+                color: yellow;
+                
+            }
+            
+            .active-light input:nth-child(2) {
+                top: 0px;
+                color: yellow;
+            }
+
+            .active-light input:nth-child(3) {
+                top: 50px;
+            }
+
+			.active-light input, .active-dark input {
+                position: absolute;
+                border-radius: 5px;
+				box-shadow: 0px 0px 0px rgba(255,255,255,.5);
+                left: 0px;
+                top: 0px;
+                width: 150px;
+                height: 35px;
+                font-family: 'Comfortaa', cursive;
+			}
+            
+            
+
+            .active-light {
+				box-shadow: 0px 0px 15px rgba(0,0,0,.5);
+                background-color: rgba(255,255,255,0.2);
+				border: solid 1px rgba(255,255,255,.3);
+            }
+            
+            .active-light input {
+                background-color: rgba(255,255,255,0.2);
+				border: solid 1px rgba(255,255,255,.3);
+                color: black;
+            }
+
+            .active-dark {
+				box-shadow: 0px 0px 25px rgba(255,255,255,.5);
+                background-color: rgba(255,255,255,0.2);
+				border: solid 1px rgba(255,255,255,.3);
+            }
+
+            .active-dark input {
+                background-color: rgba(255,255,255,0.2);
+				border: solid 1px rgba(255,255,255,.3);
+                color: white;
+                top: 0px;
+            }
+
+			
+			#gameLayer canvas {
+				-webkit-transform: translate3d(0, 0, 0);
+			}
+			
+			#gameLayer, #uiLayer, #backgroundLayer, #outsideFrame {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				width: 100%;
+				height: 100%;
+			}
+			
+			#uiLayer, #backgroundLayer {
+				overflow:: hidden;
+			}
+			
+			#gameLayer {
+				overflow: auto;
+			}
+			
+			#uiLayer { 
+				height: 95%;
+			}
+			
+			#backgroundLayer {
+				
+			}   
+            #startButton {
+                padding: 5px;
+                margin: 10px;
+                font-size: 20px;
+                
+            }
+        </style>
+		<script type="text/javascript" src="js/NameSpaces.js"></script>
+		<script type="text/javascript" src="js/Sprite.js"></script>
+		<script type="text/javascript" src="js/MouseTrack.js"></script>
+		<script type="text/javascript" src="js/EventManager.js"></script>
+		<script type="text/javascript" src="js/CanvasManager.js"></script>
+		<script type="text/javascript" src="js/MapManager.js"></script>
+		<script type="text/javascript" src="js/GrassTile.js"></script>
+		<script type="text/javascript" src="js/DebugPanel.js"></script>
+		<script type="text/javascript" src="js/GameCore.js"></script>
+		<script>
+			function initGame() {
+				Grass.gGameCore.Init();
+			}
+		</script>
+    </head>
+    <body onLoad="initGame()">
+		<div id="outsideFrame" class="animate">
+			<div id="insideFrame" class="inactive">
+            
+				<div id="backgroundLayer"></div>
+				<div id="gameLayer"></div>
+                <div id="uiLayer">
+                    <h1 align="center">Grass Simulator 2015</h1>
+                    <input type="button" value="Test Map" onclick="Grass.gGameCore.PostLoad(0)" id="startButton">
+                    <input type="button" value="Pond Map" onclick="Grass.gGameCore.PostLoad(1)" id="startButton">
+                    <p>Select a map to begin</p>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
