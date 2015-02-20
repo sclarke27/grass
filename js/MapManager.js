@@ -222,20 +222,23 @@ Utils.cMapLayer.prototype.BuildLayerCanvas = function(targetDomObj){
 			
 			currTile.mPosX = tilePositionX;
 			currTile.mPosY = tilePositionY;
-			
-			tempLookupCache[segmentX][segmentY].push(currTile);
-
-            this.mLayerCanvas.DrawImage(currTile.mBaseTile, (tilePositionX), (tilePositionY), this.mLayerTileHeight, this.mLayerTileWidth);
-            
-            if(currTile.mIsHighlighted === true) {
-				this.mLayerCanvas.DrawBlockHightlight(this.mHighlightImgObj, currTile.mBaseTile, (tilePositionX), (tilePositionY));
-            }
-
-            if(currTile.mIsSelected === true) {
-				//console.debug(currTile)
-                this.mLayerCanvas.DrawBlockHightlight(this.mSelectedImgObj, currTile.mBaseTile, (tilePositionX), (tilePositionY));
-            }
-
+			if (tempLookupCache && tempLookupCache[segmentX]) {
+				if(!tempLookupCache[segmentX].hasOwnProperty[segmentY]) {
+					tempLookupCache[segmentX][segmentY] = [];
+				}
+				tempLookupCache[segmentX][segmentY].push(currTile);
+				
+				this.mLayerCanvas.DrawImage(currTile.mBaseTile, (tilePositionX), (tilePositionY), this.mLayerTileHeight, this.mLayerTileWidth);
+				
+				if (currTile.mIsHighlighted === true) {
+					this.mLayerCanvas.DrawBlockHightlight(this.mHighlightImgObj, currTile.mBaseTile, (tilePositionX), (tilePositionY));
+				}
+				
+				if (currTile.mIsSelected === true) {
+					//console.debug(currTile)
+					this.mLayerCanvas.DrawBlockHightlight(this.mSelectedImgObj, currTile.mBaseTile, (tilePositionX), (tilePositionY));
+				}
+			}
 			
             y++;
             i++;
