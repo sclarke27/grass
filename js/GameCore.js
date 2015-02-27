@@ -39,8 +39,30 @@ Grass.cGameCore = function () {
     this.mToolbarCanvas = null;    
 
     this.mMapsPath = ['lawn_maps/', ];
-    this.mMaps = ['starting_lawn', 'pond'];
+    this.mMaps = ['start', 'lawn3'];
 	
+    this.mCurrTilesInSegment = [];
+    this.mHighlightedTile = null;
+    this.mSelectedTile = null;
+	
+	this.mCurrGameHour = 0;
+	this.mCurrGameMinute = 0;
+	this.mCurrTimeTick = 0;
+	this.mFramesPerGameMinute = 60;
+	
+	this.mGamePads = [];
+	
+	this.mGameTime = {
+		currHour : 12,
+		currMinute : 0,
+		currTick : 0,
+		framesPerTick : 1,
+		maxMinutes : 60,
+		maxHours : 12,
+		isDaytime : true
+	}
+
+    //load up map data into localStorage
     localStorage.clear();
     for(var i=0, l=this.mMaps.length; i<l; i++) {
         var scriptTag = document.createElement('script');
@@ -50,9 +72,6 @@ Grass.cGameCore = function () {
     }
 	
 	
-	this.mCurrTilesInSegment = [];
-	this.mHighlightedTile = null;
-	this.mSelectedTile = null;
 		
 };
 
@@ -76,30 +95,50 @@ Grass.cGameCore.prototype.Init = function () {
         this.mDebugPanel = new Utils.cDebugPanel(this.mUILayerDivObj);
         this.mDebugPanel.Init();
     }
-    
+    this.mGamePads = navigator.getGamepads();
 	this.ListenForEvents();
-	
+	this.RefreshGamePadStatus();
     this.mMouseTrack = new Utils.MouseTrack(this.mScreenSegmentSize);	
 	
 	
 
 }
 
-Grass.cGameCore.prototype.PostLoad = function(mapIndex) {
+Grass.cGameCore.prototype.RefreshGamePadStatus = function () {
+	var pads = navigator.getGamepads();
+	var tempPadList = [];
+	for(var i = 0, l = pads.length; i < l; i++) {
+		if(typeof  pads[i] == "object") {
+			tempPadList.push(pads[i]);
+		}
+	}
+	this.mGamePads = tempPadList;
+	
+	if(this.mGamePads.length > 0) {
+		var gamepad = Grass.gGameCore.mGamePads[0]; 
+		var leftY = gamepad.axes[0].toPrecision(2);
+		var leftX = gamepad.axes[1].toPrecision(2);
+        var rightY = gamepad.axes[2].toPrecision(2);
+        var rightX = gamepad.axes[3].toPrecision(2);
+		//console.debug(leftX, leftY);
+		var buttons = gamepad.buttons;
+		for(var i = 0, l = buttons.length; i<l; i++) {
+			if(buttons[i].pressed) {
+				//console.debug(i, buttons[i]);
+				this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, i, buttons[i]);
+			}
+		}
+	}
+}
+
+Grass.cGameCore.prototype.StartMap = function(mapIndex) {
 	document.getElementById('insideFrame').className = "";
 	var core = this;
 
-    if(mapIndex === 0) {
-		document.getElementById('outsideFrame').style.backgroundColor = "#0fb4e7"
-		document.getElementById('insideFrame').className = "active-light";   
-	} else {
-		document.getElementById('outsideFrame').style.backgroundColor = "#00001c"
-		document.getElementById('insideFrame').className = "active-dark";
-	}
-    
+
+    document.getElementById('gameClock').style.display = "block";
     if(this.mLawnManager !== null) {
 		this.mLawnManager.ClearMap();
-		
 	} else {
 	   this.mLawnManager = new Utils.cMapManager(this.mGameLayerDivObj, this.mScreenSegmentSize);	
 	}
@@ -111,12 +150,24 @@ Grass.cGameCore.prototype.PostLoad = function(mapIndex) {
 		
     }
     this.mGameIsPaused = false;
+    this.mGameTime = {
+        currHour : 12,
+        currMinute : 0,
+        currTick : 0,
+        framesPerTick : 60,
+        maxMinutes : 60,
+        maxHours : 12,
+        isDaytime : true
+    }	
     
 	window.requestAnimationFrame(this.OnFrameChange);
     this.mMouseTrack.Init('gameLayer', this.mLawnManager.mLayerList[0].mLayerCanvas, function() {
 		core.SegmentMouseHandler(arguments[0], arguments[1], arguments[2])
 	});
     Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.CLICK, 'uiLayer', function() {
+        core.TileSelectClickHandler();
+    });
+    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 0, function() {
         core.TileSelectClickHandler();
     });
 	
@@ -136,6 +187,38 @@ Grass.cGameCore.prototype.OnFrameChange = function () {
 	        core.mLawnManager.mLayerList[layer].BuildLayerCanvas(null);
 	    }
         core.mMouseTrack.DoTracking();
+		core.RefreshGamePadStatus();
+
+        if(core.mGameTime.currTick >= core.mGameTime.framesPerTick) {
+			core.mGameTime.currMinute++;
+			core.mGameTime.currTick = 0;
+			if(core.mGameTime.currMinute >= 60) {
+				core.mGameTime.currMinute = 0;
+				core.mGameTime.currHour++;
+				if(core.mGameTime.currHour === 12) {
+				    core.mGameTime.isDaytime = !core.mGameTime.isDaytime 	
+				} else if(core.mGameTime.currHour > 12) {
+					core.mGameTime.currHour = 1;
+				}
+				
+			}
+		} else {
+			core.mGameTime.currTick++;
+		}
+		document.getElementById("clockTime").innerHTML = (core.mGameTime.currHour < 10) ? ('0' + core.mGameTime.currHour) : core.mGameTime.currHour; 
+		document.getElementById("clockTime").innerHTML +=  ":" + ((core.mGameTime.currMinute < 10) ? ('0' + core.mGameTime.currMinute) : core.mGameTime.currMinute);
+		document.getElementById("clockTime").innerHTML += core.mGameTime.isDaytime ? "&nbsp;am" : "&nbsp;pm";
+	    if(core.mGameTime.isDaytime) {
+			if (document.getElementById('insideFrame').className != "active-light") {
+				document.getElementById('outsideFrame').style.backgroundColor = "#0fb4e7"
+				document.getElementById('insideFrame').className = "active-light";
+			}
+	    } else {
+			if (document.getElementById('insideFrame').className != "active-dark") {
+				document.getElementById('outsideFrame').style.backgroundColor = "#00001c"
+				document.getElementById('insideFrame').className = "active-dark";
+			}
+	    }		
         window.requestAnimationFrame(core.OnFrameChange);
     }
 }
@@ -164,9 +247,29 @@ Grass.cGameCore.prototype.TileSelectClickHandler = function() {
 		if(this.mSelectedTile !== null) {
 			this.mSelectedTile.SetSelected(false);
 			this.mSelectedTile.SetHighlighted(false);
+			
 		}
         this.mSelectedTile = this.mHighlightedTile;
+        this.mSelectedTile.SetHighlighted(false);
 		this.mSelectedTile.SetSelected(true);
+		
+        var infoPanel = document.getElementById("tileInfoPanel")
+		infoPanel.style.display = "block";
+		infoPanel.innerHTML = "<h1>" + this.mSelectedTile.mBaseTile.mName.replace('Tile','') + "</h1>";
+		
+		var tempCanvas = new Utils.cCanvasManager();
+		tempCanvas.Init(80,80);
+		tempCanvas.Show(infoPanel);
+		tempCanvas.DrawImage(this.mSelectedTile.mBaseTile, 0, 0, 80, 80);
+		
+		var detailsDiv = document.createElement("div");
+        detailsDiv.innerHTML = "Name: " + this.mSelectedTile.mBaseTile.mName;
+		detailsDiv.innerHTML += "<br>Growth Level: " + this.mSelectedTile.mGrowthLevel;
+        detailsDiv.innerHTML += "<br>Has Grass: " + this.mSelectedTile.mHasGrass;//((this.mSelectedTile.mHasGrass == true) ? "Yes" : "No");
+        detailsDiv.innerHTML += "<br>Pos X: " + this.mSelectedTile.mPosX;
+		detailsDiv.innerHTML += "<br>Pos Y: " + this.mSelectedTile.mPosY;
+		
+		infoPanel.appendChild(detailsDiv);
 	}
 }
 
@@ -208,9 +311,27 @@ Grass.cGameCore.prototype.HandleEvent = function(type, event, data){
     switch(type) {
         case Utils.gEventTypes.CLICK:
 			  this.mEventManager.TriggerEvent(Utils.gEventTypes.CLICK, event.toElement.id, event);
+			  event.preventDefault();
             break;
         case Utils.gEventTypes.MOUSEMOVE:
 			  this.mEventManager.TriggerEvent(Utils.gEventTypes.MOUSEMOVE, Utils.gEventTypes.MOUSEMOVE, event);
+            break;
+        case Utils.gEventTypes.TOUCHSTART:
+              this.mEventManager.TriggerEvent(Utils.gEventTypes.TOUCHSTART, event.srcElement.id, event);
+            break;
+        case Utils.gEventTypes.TOUCHMOVE:
+              this.mEventManager.TriggerEvent(Utils.gEventTypes.TOUCHMOVE, event.srcElement.id, event);
+            break;
+        case Utils.gEventTypes.TOUCHEND:
+              this.mEventManager.TriggerEvent(Utils.gEventTypes.TOUCHEND, event.srcElement.id, event);
+            break;
+        case Utils.gEventTypes.ONGAMEPADCONNECT:
+			  this.RefreshGamePadStatus();
+              this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADCONNECT, 'gamePadConnect', event);
+            break;
+        case Utils.gEventTypes.ONGAMEPADDISCONNECT:
+			  this.RefreshGamePadStatus();
+              this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADDISCONNECT, 'gamePadDisconnect', event);
             break;
         case Utils.gEventTypes.KEYDOWN:
             this.mEventManager.TriggerEvent(Utils.gEventTypes.KEYDOWN, event.keyCode, event.target);
@@ -228,7 +349,7 @@ Grass.cGameCore.prototype.HandleEvent = function(type, event, data){
             this.mEventManager.TriggerEvent(type, event, event.target);
             break;
     }
-	//event.preventDefault();
+	//
 }
 
 //load global

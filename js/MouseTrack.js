@@ -83,7 +83,7 @@ Utils.MouseTrack.prototype.BuildEmptyItemMap = function() {
 Utils.MouseTrack.prototype.DoTracking = function () {
     //if (this.mMouseData.mouseDirty) {
         var targetDiv = this.mMouseData.targetLayer;
-        if (targetDiv && targetDiv.hasOwnProperty('id')) {
+        if (targetDiv) {
             if (targetDiv.id === "uiLayer") {
                 this.mSegmentX = Math.floor(this.mMouseData.mouseX / this.mSegmentPixelSize);
                 this.mSegmentY = Math.floor(this.mMouseData.mouseY / this.mSegmentPixelSize);

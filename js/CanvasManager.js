@@ -63,6 +63,16 @@ Utils.cCanvasManager.prototype.DrawSimpleImage = function(imgObj, posX, posY, wi
 	
 }
 
+Utils.cCanvasManager.prototype.DrawBlockDecal = function(decalImgObj, heightOffset, posX, posY) {
+	
+    this.mCanvasContext.drawImage(
+        decalImgObj, 
+        posX - 10,
+        posY - heightOffset
+    )
+    
+}
+
 Utils.cCanvasManager.prototype.DrawBlockHightlight = function(highlightImgObj, imgData, posX, posY) {
     this.mCanvasContext.drawImage(
         highlightImgObj, 

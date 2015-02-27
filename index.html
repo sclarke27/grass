@@ -3,8 +3,9 @@
 	<head>
 		<meta charset="UTF-8" />
 		<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
-		<META HTTP-EQUIV="Expires" CONTENT="-1">		
-        <title> Watch the Grass Grow</title>
+		<META HTTP-EQUIV="Expires" CONTENT="-1">	
+        <link rel="shortcut icon" href="grass_clump1.png">        
+        <title>Grass Simulator</title>
         <link href='http://fonts.googleapis.com/css?family=Economica:400italic,700italic|Waiting+for+the+Sunrise|Walter+Turncoat|Comfortaa:300' rel='stylesheet' type='text/css'>
 		<style>
 			* {
@@ -175,11 +176,11 @@
 			}
 			
 			#gameLayer {
-				overflow: auto;
+				overflow: hidden;
 			}
 			
 			#uiLayer { 
-				height: 95%;
+				height: 100%;
 			}
 			
 			#backgroundLayer {
@@ -190,6 +191,45 @@
                 margin: 10px;
                 font-size: 20px;
                 
+            }
+            #gameClock {
+                position: absolute;
+                bottom: 0px;
+                left: 0px;
+                width: 200px;
+                display: none;
+            }
+            #tileInfoPanel, #gamePadInfoPanel {
+                position: absolute;
+                border-radius: 5px;
+                background-color: rgba(255,255,255,0.3);
+                border: solid 2px rgba(255,255,255,0.7);
+                display: none;
+            }
+
+            #tileInfoPanel {
+                bottom: 10px;
+                right: 10px;
+                width: 270px;
+                height: 120px;
+            
+            }
+            
+            #gamePadInfoPanel {
+                top: 10px;
+                right: 10px;
+                width: 270px;
+                height: 120px;
+            }
+
+            #tileInfoPanel canvas{
+                padding: 20px;
+            }
+            #tileInfoPanel div{
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                width: 140px;
             }
         </style>
 		<script type="text/javascript" src="js/NameSpaces.js"></script>
@@ -215,9 +255,12 @@
 				<div id="gameLayer"></div>
                 <div id="uiLayer">
                     <h1 align="center">Grass Simulator 2015</h1>
-                    <input type="button" value="Test Map" onclick="Grass.gGameCore.PostLoad(0)" id="startButton">
-                    <input type="button" value="Pond Map" onclick="Grass.gGameCore.PostLoad(1)" id="startButton">
+                    <input type="button" value="Test Map" onclick="Grass.gGameCore.StartMap(0)" id="startButton">
+                    <input type="button" value="Pond Map" onclick="Grass.gGameCore.StartMap(1)" id="startButton">
                     <p>Select a map to begin</p>
+                    <div id="tileInfoPanel"></div>
+                    <div id="gamePadInfoPanel"></div>
+                    <div id="gameClock"><h1 style="text-align: left; padding-left: 15px;">Time: <span id="clockTime">0:00</span></h1></div>
                 </div>
             </div>
         </div>

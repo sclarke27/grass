@@ -6,6 +6,9 @@ Grass.GrassTile = function (baseTile) {
 	this.mBaseTile = baseTile;
 	this.mIsHighlighted = false;
 	this.mIsSelected = false;
+	this.mHasGrass = false;
+	this.mGrowthLevel = 1;
+	
 	
 }
 //Grass.GrassTile.prototype = new Utils.Sprite();

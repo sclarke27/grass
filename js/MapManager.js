@@ -81,18 +81,17 @@ Utils.cMapManager.prototype.ParseMapData = function (jsonData) {
  * @param {Object} offsetY
  */
 Utils.cMapTile = function (tileData, offsetX, offsetY) {
-    this.mRawData = tileData;
-    this.mImgSrc = "lawn_maps/" + this.mRawData.image;
-    this.mImgMargin = this.mRawData.margin;
-    this.mName = this.mRawData.name;
-    this.mProperties = this.mRawData.properties;
-    this.mSpacing = this.mRawData.spacing;
-    this.mTileHeight = this.mRawData.tileheight;
-    this.mTileWidth = this.mRawData.tilewidth;
-    this.mTranspColor = this.mRawData.transparentclor;
-    this.mOffsetX = this.mRawData.offsetx || 0;
-    this.mOffsetY = this.mRawData.offsety || 0;
-    this.isVisible = this.mRawData.isvisible || true;
+    //this.mRawData = tileData;
+    this.mImgSrc = "lawn_maps/" + tileData.image;
+    this.mImgMargin = tileData.margin;
+    this.mName = tileData.name;
+    this.mSpacing = tileData.spacing;
+    this.mTileHeight = tileData.tileheight;
+    this.mTileWidth = tileData.tilewidth;
+    this.mOffsetX = Number(tileData.offsetx) || 0;
+    this.mOffsetY = Number(tileData.offsety) || 0;
+    this.isVisible = tileData.isvisible || true;
+	this.mBlockHeightIndex = this.mOffsetX + this.mOffsetY;
 	
 	this.mImgObj = new Image();
     if (this.mImgSrc) {
@@ -131,6 +130,8 @@ Utils.cMapLayer = function (layerData, tileList, tileWidth, tileHeight, segmentS
     this.mLayerCanvas = new Utils.cCanvasManager();
 	this.mScreenSegmentSize = segmentSize;
     this.mHighlightImgObj = null;
+	this.mSelectedImgObj = null;
+	this.mGrassClumpImgObj = null;
 	
     this.BuildEmptyTileMap();
 }
@@ -172,10 +173,13 @@ Utils.cMapLayer.prototype.LoadLayerMap = function () {
     }
     
 	this.mHighlightImgObj = new Image();
-    this.mHighlightImgObj.src = "lawn_maps/blockHighlight-orange.png";
+    this.mHighlightImgObj.src = "lawn_maps/blockHighlight-green-wide.png";
 
     this.mSelectedImgObj = new Image();
-    this.mSelectedImgObj.src = "lawn_maps/blockHighlight-yellow.png";
+    this.mSelectedImgObj.src = "lawn_maps/blockHighlight-white-wide.png";
+	
+	this.mGrassClumpImgObj = new Image();
+    this.mGrassClumpImgObj.src = "lawn_maps/grass_clump-sm.png";
 
     this.mLayerCanvas.Init((this.mLayerWidth*this.mLayerTileWidth),(this.mLayerHeight*this.mLayerTileHeight+40));
     //console.debug(this.mTileMap)
@@ -207,6 +211,7 @@ Utils.cMapLayer.prototype.BuildLayerCanvas = function(targetDomObj){
 		}
 	}
 	
+	var selectedIndex = -1;
     while (x < this.mLayerWidth) {
         while( y < this.mLayerHeight){
             var currTile = this.mTileMap[x][y];
@@ -222,6 +227,7 @@ Utils.cMapLayer.prototype.BuildLayerCanvas = function(targetDomObj){
 			
 			currTile.mPosX = tilePositionX;
 			currTile.mPosY = tilePositionY;
+			currTile.mIndex = i;
 			if (tempLookupCache && tempLookupCache[segmentX]) {
 				if(!tempLookupCache[segmentX].hasOwnProperty[segmentY]) {
 					tempLookupCache[segmentX][segmentY] = [];
@@ -230,12 +236,19 @@ Utils.cMapLayer.prototype.BuildLayerCanvas = function(targetDomObj){
 				
 				this.mLayerCanvas.DrawImage(currTile.mBaseTile, (tilePositionX), (tilePositionY), this.mLayerTileHeight, this.mLayerTileWidth);
 				
+                //if (currTile.mHasGrass === true) {
+				if (currTile.mBaseTile.mName === "GrassTile") {
+					var topOffset = 40 - (currTile.mBaseTile.mBlockHeightIndex * 10);
+                    this.mLayerCanvas.DrawBlockDecal(this.mGrassClumpImgObj, topOffset, (tilePositionX), (tilePositionY));
+                }
+
 				if (currTile.mIsHighlighted === true) {
 					this.mLayerCanvas.DrawBlockHightlight(this.mHighlightImgObj, currTile.mBaseTile, (tilePositionX), (tilePositionY));
 				}
 				
 				if (currTile.mIsSelected === true) {
 					//console.debug(currTile)
+					selectedIndex = i;
 					this.mLayerCanvas.DrawBlockHightlight(this.mSelectedImgObj, currTile.mBaseTile, (tilePositionX), (tilePositionY));
 				}
 			}
@@ -247,7 +260,7 @@ Utils.cMapLayer.prototype.BuildLayerCanvas = function(targetDomObj){
         x++;
     }
 	this.mTileLookupCache = tempLookupCache;
-	//console.debug('lawn refreshed');
+	//console.debug('lawn refreshed', selectedIndex);
 }
 
 Utils.cMapLayer.prototype.HideLayerCanvas = function(){
@@ -260,16 +273,22 @@ Utils.cMapLayer.prototype.LookupTilesInSegment = function (segmentX, segmentY) {
 	var returnArr = [];
 	//console.debug(segmentX, this.mTileLookupCache.hasOwnProperty(segmentX))
 	//returnArr = this.mTileLookupCache[segmentX][segmentY];
-	
-    for(var x=segmentX-1,len=segmentX+1;x<=len;x++) {
-		for (var y = segmentY - 1, len2 = segmentY + 1; y <= len2; y++) {
-			if (x >= 0 && y >= 0 && x < this.mTileLookupCache.length && y < this.mTileLookupCache[x].length) {
-				var data = this.mTileLookupCache[segmentX][segmentY];
-				if (data) {
-					returnArr = returnArr.concat(this.mTileLookupCache[x][y]);
+	try {
+		for (var x = segmentX - 1, len = segmentX + 1; x <= len; x++) {
+			for (var y = segmentY - 1, len2 = segmentY + 1; y <= len2; y++) {
+				if (x >= 0 && y >= 0 && x < this.mTileLookupCache.length && y < this.mTileLookupCache[x].length) {
+					if (this.mTileLookupCache[segmentX].hasOwnProperty(segmentY)) {
+						var data = this.mTileLookupCache[segmentX][segmentY];
+						if (data) {
+							returnArr = returnArr.concat(this.mTileLookupCache[x][y]);
+						}
+					}
 				}
 			}
 		}
+	}
+	catch (e) {
+		returnArr = [];
 	}
 
 	return returnArr;
