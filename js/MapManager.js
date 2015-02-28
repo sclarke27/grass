@@ -212,6 +212,7 @@ Utils.cMapLayer.prototype.BuildLayerCanvas = function(targetDomObj){
 	}
 	
 	var selectedIndex = -1;
+	i=0;
     while (x < this.mLayerWidth) {
         while( y < this.mLayerHeight){
             var currTile = this.mTileMap[x][y];
@@ -267,6 +268,26 @@ Utils.cMapLayer.prototype.HideLayerCanvas = function(){
     this.mLayerCanvas.Hide();
 }
 
+Utils.cMapLayer.prototype.LookupTileByIndex = function (tileIndex) {
+	var returnTile = null;
+	var total = 0;
+    try {
+        for(var x=0, lx=this.mTileMap.length; x<lx; x++) {
+            var currRow = this.mTileMap[x];
+			for(var y=0, ly=currRow.length; y<ly; y++) {
+				total++;
+				if(this.mTileMap[x][y].mIndex == tileIndex) {
+					returnTile = this.mTileMap[x][y];
+				}
+			}
+		}
+    }
+    catch (e) {
+        
+    }
+		
+	return returnTile;
+}
 
 Utils.cMapLayer.prototype.LookupTilesInSegment = function (segmentX, segmentY) {
 	//console.debug(segmentX, segmentY, this.mTileLookupCache);

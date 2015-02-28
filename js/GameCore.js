@@ -43,7 +43,9 @@ Grass.cGameCore = function () {
 	
     this.mCurrTilesInSegment = [];
     this.mHighlightedTile = null;
+	this.mHighlightedTileIndex = null;
     this.mSelectedTile = null;
+	this.mSelectedTileIndex = null;
 	
 	this.mCurrGameHour = 0;
 	this.mCurrGameMinute = 0;
@@ -51,6 +53,10 @@ Grass.cGameCore = function () {
 	this.mFramesPerGameMinute = 60;
 	
 	this.mGamePads = [];
+	this.mButtonPressed = new Array(16);
+	for(var i=0; i<this.mButtonPressed.length; i++) {
+		this.mButtonPressed[i] = false;
+	} 
 	
 	this.mGameTime = {
 		currHour : 12,
@@ -95,7 +101,7 @@ Grass.cGameCore.prototype.Init = function () {
         this.mDebugPanel = new Utils.cDebugPanel(this.mUILayerDivObj);
         this.mDebugPanel.Init();
     }
-    this.mGamePads = navigator.getGamepads();
+
 	this.ListenForEvents();
 	this.RefreshGamePadStatus();
     this.mMouseTrack = new Utils.MouseTrack(this.mScreenSegmentSize);	
@@ -122,20 +128,22 @@ Grass.cGameCore.prototype.RefreshGamePadStatus = function () {
         var rightX = gamepad.axes[3].toPrecision(2);
 		//console.debug(leftX, leftY);
 		var buttons = gamepad.buttons;
+		//console.debug(buttons)
 		for(var i = 0, l = buttons.length; i<l; i++) {
-			if(buttons[i].pressed) {
-				//console.debug(i, buttons[i]);
+			if (buttons[i].pressed && this.mButtonPressed[i] == false) {
+				this.mButtonPressed[i] = true;
 				this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, i, buttons[i]);
+			} else if (buttons[i].value === 0) {
+                this.mButtonPressed[i] = false;
 			}
 		}
 	}
 }
 
 Grass.cGameCore.prototype.StartMap = function(mapIndex) {
+    var core = this;
 	document.getElementById('insideFrame').className = "";
-	var core = this;
-
-
+    document.getElementById('openingMenu').className = "top-left";
     document.getElementById('gameClock').style.display = "block";
     if(this.mLawnManager !== null) {
 		this.mLawnManager.ClearMap();
@@ -169,6 +177,23 @@ Grass.cGameCore.prototype.StartMap = function(mapIndex) {
     });
     Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 0, function() {
         core.TileSelectClickHandler();
+    });
+    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 14, function() {
+		var newIndex = core.mHighlightedTileIndex || 0;
+        core.HighlightTileByIndex(Math.min(newIndex+1),224);        
+    });
+    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 15, function() {
+        var newIndex = core.mHighlightedTileIndex || 0;
+        core.HighlightTileByIndex(Math.min(newIndex-1),224);
+    });
+    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 12, function() {
+        var newIndex = core.mHighlightedTileIndex || 0;
+		core.HighlightTileByIndex(Math.min(newIndex-15),224); 
+        
+    });
+    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 13, function() {
+        var newIndex = core.mHighlightedTileIndex || 0;
+        core.HighlightTileByIndex(Math.min(newIndex+15),224);
     });
 	
 	
@@ -252,6 +277,7 @@ Grass.cGameCore.prototype.TileSelectClickHandler = function() {
         this.mSelectedTile = this.mHighlightedTile;
         this.mSelectedTile.SetHighlighted(false);
 		this.mSelectedTile.SetSelected(true);
+		this.mSelectedTileIndex = this.mSelectedTile.mIndex;
 		
         var infoPanel = document.getElementById("tileInfoPanel")
 		infoPanel.style.display = "block";
@@ -264,6 +290,7 @@ Grass.cGameCore.prototype.TileSelectClickHandler = function() {
 		
 		var detailsDiv = document.createElement("div");
         detailsDiv.innerHTML = "Name: " + this.mSelectedTile.mBaseTile.mName;
+        detailsDiv.innerHTML += "<br>Tile Index: " + this.mSelectedTile.mIndex;
 		detailsDiv.innerHTML += "<br>Growth Level: " + this.mSelectedTile.mGrowthLevel;
         detailsDiv.innerHTML += "<br>Has Grass: " + this.mSelectedTile.mHasGrass;//((this.mSelectedTile.mHasGrass == true) ? "Yes" : "No");
         detailsDiv.innerHTML += "<br>Pos X: " + this.mSelectedTile.mPosX;
@@ -294,7 +321,9 @@ Grass.cGameCore.prototype.SegmentMouseHandler = function (segmentX, segmentY, mo
         var yDelta = Math.pow(((currTile.mPosY+(currTile.mBaseTile.mTileHeight/2))- mouseData.mouseY),2);
         var dist = Math.sqrt(xDelta + yDelta);
         
-        if (dist < closetDist) {
+		if(currTile.mIndex == this.mHighlightedTileIndex) {
+			this.mHighlightedTile = currTile;
+		}else if (dist < closetDist) {
             closetDist = dist;
             this.mHighlightedTile = currTile;
         }
@@ -302,9 +331,37 @@ Grass.cGameCore.prototype.SegmentMouseHandler = function (segmentX, segmentY, mo
 
 	if(this.mHighlightedTile !== null) {
 		this.mHighlightedTile.SetHighlighted(true);
+		this.mHighlightedTileIndex = this.mHighlightedTile.mIndex; 
 	}
 	this.mCurrTilesInSegment = tempTileList;
 	//console.debug(this.mCurrTilesInSegment);
+}
+
+Grass.cGameCore.prototype.HighlightTileByIndex = function (tileIndex) {
+	if(tileIndex < 0 || tileIndex > 224) {
+		return;
+	}
+	this.mHighlightedTileIndex = tileIndex;
+	var tempTile = null;
+    for (var layer in this.mLawnManager.mLayerList) {
+        tempTile = this.mLawnManager.mLayerList[layer].LookupTileByIndex(tileIndex)
+    }   
+	
+    if(this.mHighlightedTile !== null) {
+        this.mHighlightedTile.SetHighlighted(false);
+    }
+	
+	if(tempTile !== null) {
+		this.mHighlightedTile = tempTile;
+		this.mHighlightedTile.SetHighlighted(true);
+		this.mHighlightedTileIndex = this.mHighlightedTile.mIndex; 
+	}
+	
+}
+
+Grass.cGameCore.prototype.SelectTileByIndex = function (tileIndex) {
+    this.HighlightTileByIndex(tileIndex);
+    this.TileSelectClickHandler();
 }
 
 Grass.cGameCore.prototype.HandleEvent = function(type, event, data){
