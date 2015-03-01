@@ -356,12 +356,15 @@ Grass.cGameCore.prototype.DrawSelectedTileInfo = function () {
     var detailsDiv = document.createElement("div");
     detailsDiv.innerHTML = "Name: " + this.mSelectedTile.mBaseTile.mName;
     detailsDiv.innerHTML += "<br>Tile Index: " + this.mSelectedTile.mIndex;
-    detailsDiv.innerHTML += "<br>Growth Level: " + this.mSelectedTile.mGrowthLevel;
-    detailsDiv.innerHTML += "<br>Growth Factor: " + this.mSelectedTile.mGrowthFactor;
-    //detailsDiv.innerHTML += "<br>Pos X: " + this.mSelectedTile.mPosX;
-    //detailsDiv.innerHTML += "<br>Pos Y: " + this.mSelectedTile.mPosY;
-    detailsDiv.innerHTML += "<br><button id='cutGrassButton'>Cut Grass</button>";
-    
+	if (this.mSelectedTile.mBaseTile.mName.replace('Tile', '') == "Grass") {
+		detailsDiv.innerHTML += "<br>Growth Level: " + this.mSelectedTile.mGrowthLevel;
+		detailsDiv.innerHTML += "<br>Growth Factor: " + this.mSelectedTile.mGrowthFactor;
+		//detailsDiv.innerHTML += "<br>Pos X: " + this.mSelectedTile.mPosX;
+		//detailsDiv.innerHTML += "<br>Pos Y: " + this.mSelectedTile.mPosY;
+		if (this.mSelectedTile.mGrowthLevel > 0) {
+			detailsDiv.innerHTML += "<br><button id='cutGrassButton'>Cut Grass</button>";
+		}
+	}
     infoPanel.appendChild(detailsDiv);
 	
 }

@@ -119,7 +119,7 @@ Utils.cSimCore.prototype.UpdateGrowthFactor = function(tile) {
 	}
     startFactor = (startFactor > 9) ? 10 : startFactor;
 	if(!this.mSimTime.isDaytime) {
-		startFactor = startFactor / 10;
+		startFactor = Math.max(0, startFactor / 4);
 	}
     tile.mGrowthFactor = startFactor;
 }
