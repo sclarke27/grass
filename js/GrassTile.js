@@ -26,3 +26,4 @@ Grass.GrassTile.prototype.SetSelected = function (isSelected) {
         this.mIsSelected = isSelected;
     }
 };
+
