@@ -40,7 +40,7 @@
 				position: relative;
 				margin: 50px auto;
 				width: 1200px;
-				height: 660px;
+				height: 640px;
                 border-radius: 15px;
 			}
             
@@ -266,6 +266,7 @@
 		<script type="text/javascript" src="js/MapManager.js"></script>
 		<script type="text/javascript" src="js/GrassTile.js"></script>
 		<script type="text/javascript" src="js/DebugPanel.js"></script>
+		<script type="text/javascript" src="js/SimCore.js"></script>
 		<script type="text/javascript" src="js/GameCore.js"></script>
 		<script>
 			function initGame() {
@@ -287,7 +288,8 @@
                             <p>Select a map to begin</p>
                             <select name="mapSelect" id="mapSelectInput">
                                 <option value="0">Starter Lawn</option>
-                                <option value="1">Lawn (3)</option>
+                                <option value="1">Pond</option>
+                                <option value="2">Test Map</option>
                             </select>
                             <button onclick="Grass.gGameCore.StartMap(document.getElementById('mapSelectInput').selectedIndex)" id="startButton">Start Game</button>
                         </form>

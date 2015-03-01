@@ -13,6 +13,7 @@ Grass.cGameCore = function () {
     this.mCollisionManager = null;
     this.mEventManager = null;
 	this.mMouseTrack = null;
+	this.mSimCore = null;
     
     //debug panel
     this.mDebugPanel = null;
@@ -32,6 +33,7 @@ Grass.cGameCore = function () {
     //misc game values
     this.mGameIsPaused = true;
     this.mIsTouchUI = null;
+	this.mGameStarted = false;
 	
 	this.mLawnManager = null;	
 	
@@ -39,7 +41,7 @@ Grass.cGameCore = function () {
     this.mToolbarCanvas = null;    
 
     this.mMapsPath = ['lawn_maps/', ];
-    this.mMaps = ['start', 'lawn3'];
+    this.mMaps = ['start', 'pond1', 'test-map'];
 	
     this.mCurrTilesInSegment = [];
     this.mHighlightedTile = null;
@@ -47,9 +49,6 @@ Grass.cGameCore = function () {
     this.mSelectedTile = null;
 	this.mSelectedTileIndex = null;
 	
-	this.mCurrGameHour = 0;
-	this.mCurrGameMinute = 0;
-	this.mCurrTimeTick = 0;
 	this.mFramesPerGameMinute = 60;
 	
 	this.mGamePads = [];
@@ -96,6 +95,7 @@ Grass.cGameCore.prototype.Init = function () {
 	//this.mScreenSegmentSize = this.mDocWidth/10;
     
     this.mEventManager = new Utils.cEventManger();
+	this.mSimCore = new Utils.cSimCore();
     
     if(this.mShowDebug) {
         this.mDebugPanel = new Utils.cDebugPanel(this.mUILayerDivObj);
@@ -133,6 +133,7 @@ Grass.cGameCore.prototype.RefreshGamePadStatus = function () {
 			if (buttons[i].pressed && this.mButtonPressed[i] == false) {
 				this.mButtonPressed[i] = true;
 				this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, i, buttons[i]);
+				//console.debug(i)
 			} else if (buttons[i].value === 0) {
                 this.mButtonPressed[i] = false;
 			}
@@ -142,13 +143,13 @@ Grass.cGameCore.prototype.RefreshGamePadStatus = function () {
 
 Grass.cGameCore.prototype.StartMap = function(mapIndex) {
     var core = this;
-	document.getElementById('insideFrame').className = "";
-    document.getElementById('openingMenu').className = "top-left";
-    document.getElementById('gameClock').style.display = "block";
+	
+	this.mSimCore.FlushSim();
+	
     if(this.mLawnManager !== null) {
 		this.mLawnManager.ClearMap();
 	} else {
-	   this.mLawnManager = new Utils.cMapManager(this.mGameLayerDivObj, this.mScreenSegmentSize);	
+	   this.mLawnManager = new Utils.cMapManager(this.mGameLayerDivObj, this.mScreenSegmentSize, this.mSimCore);	
 	}
     
     this.mLawnManager.LoadMap(this.mMaps[mapIndex]);
@@ -158,44 +159,47 @@ Grass.cGameCore.prototype.StartMap = function(mapIndex) {
 		
     }
     this.mGameIsPaused = false;
-    this.mGameTime = {
-        currHour : 12,
-        currMinute : 0,
-        currTick : 0,
-        framesPerTick : 60,
-        maxMinutes : 60,
-        maxHours : 12,
-        isDaytime : true
-    }	
     
-	window.requestAnimationFrame(this.OnFrameChange);
-    this.mMouseTrack.Init('gameLayer', this.mLawnManager.mLayerList[0].mLayerCanvas, function() {
-		core.SegmentMouseHandler(arguments[0], arguments[1], arguments[2])
-	});
-    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.CLICK, 'uiLayer', function() {
-        core.TileSelectClickHandler();
-    });
-    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 0, function() {
-        core.TileSelectClickHandler();
-    });
-    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 14, function() {
-		var newIndex = core.mHighlightedTileIndex || 0;
-        core.HighlightTileByIndex(Math.min(newIndex+1),224);        
-    });
-    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 15, function() {
-        var newIndex = core.mHighlightedTileIndex || 0;
-        core.HighlightTileByIndex(Math.min(newIndex-1),224);
-    });
-    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 12, function() {
-        var newIndex = core.mHighlightedTileIndex || 0;
-		core.HighlightTileByIndex(Math.min(newIndex-15),224); 
-        
-    });
-    Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 13, function() {
-        var newIndex = core.mHighlightedTileIndex || 0;
-        core.HighlightTileByIndex(Math.min(newIndex+15),224);
-    });
-	
+    
+	if (!this.mGameStarted) {
+		window.requestAnimationFrame(this.OnFrameChange);
+	    document.getElementById('insideFrame').className = "";
+	    document.getElementById('openingMenu').className = "top-left";
+	    document.getElementById('gameClock').style.display = "block";
+		this.mMouseTrack.Init('gameLayer', this.mLawnManager.mLayerList[0].mLayerCanvas, function() {
+			core.SegmentMouseHandler(arguments[0], arguments[1], arguments[2])
+		});
+		Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.CLICK, 'uiLayer', function() {
+			core.TileSelectClickHandler();
+		});
+        Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.KEYDOWN, 27, function() {
+            core.PauseGame();
+        });
+        Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 9, function() {
+            core.PauseGame();
+        });
+		Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 0, function() {
+			core.TileSelectClickHandler();
+		});
+		Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 14, function() {
+			var newIndex = core.mHighlightedTileIndex || 0;
+			core.HighlightTileByIndex(Math.min(newIndex + 1), 224);
+		});
+		Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 15, function() {
+			var newIndex = core.mHighlightedTileIndex || 0;
+			core.HighlightTileByIndex(Math.min(newIndex - 1), 224);
+		});
+		Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 12, function() {
+			var newIndex = core.mHighlightedTileIndex || 0;
+			core.HighlightTileByIndex(Math.min(newIndex - 15), 224);
+			
+		});
+		Grass.gGameCore.mEventManager.AddEventListener(Utils.gEventTypes.ONGAMEPADBUTTONPRESS, 13, function() {
+			var newIndex = core.mHighlightedTileIndex || 0;
+			core.HighlightTileByIndex(Math.min(newIndex + 15), 224);
+		});
+		this.mGameStarted = true;
+	}
 	
 };
 
@@ -208,32 +212,22 @@ Grass.cGameCore.prototype.OnFrameChange = function () {
     
     if (!core.mGameIsPaused) {
 
+        //tick simulator
+        core.mSimCore.TickSim(currTime);
+		
+		//redraw the lawn
 	    for (var layer in core.mLawnManager.mLayerList) {
 	        core.mLawnManager.mLayerList[layer].BuildLayerCanvas(null);
 	    }
+		
+		//refresh input values
         core.mMouseTrack.DoTracking();
-		core.RefreshGamePadStatus();
+		
 
-        if(core.mGameTime.currTick >= core.mGameTime.framesPerTick) {
-			core.mGameTime.currMinute++;
-			core.mGameTime.currTick = 0;
-			if(core.mGameTime.currMinute >= 60) {
-				core.mGameTime.currMinute = 0;
-				core.mGameTime.currHour++;
-				if(core.mGameTime.currHour === 12) {
-				    core.mGameTime.isDaytime = !core.mGameTime.isDaytime 	
-				} else if(core.mGameTime.currHour > 12) {
-					core.mGameTime.currHour = 1;
-				}
-				
-			}
-		} else {
-			core.mGameTime.currTick++;
-		}
-		document.getElementById("clockTime").innerHTML = (core.mGameTime.currHour < 10) ? ('0' + core.mGameTime.currHour) : core.mGameTime.currHour; 
-		document.getElementById("clockTime").innerHTML +=  ":" + ((core.mGameTime.currMinute < 10) ? ('0' + core.mGameTime.currMinute) : core.mGameTime.currMinute);
-		document.getElementById("clockTime").innerHTML += core.mGameTime.isDaytime ? "&nbsp;am" : "&nbsp;pm";
-	    if(core.mGameTime.isDaytime) {
+        //tick clock forward
+		document.getElementById("clockTime").innerHTML = core.mSimCore.GetSimTimeToString() 
+
+	    if(core.mSimCore.IsDaytime()) {
 			if (document.getElementById('insideFrame').className != "active-light") {
 				document.getElementById('outsideFrame').style.backgroundColor = "#0fb4e7"
 				document.getElementById('insideFrame').className = "active-light";
@@ -243,15 +237,15 @@ Grass.cGameCore.prototype.OnFrameChange = function () {
 				document.getElementById('outsideFrame').style.backgroundColor = "#00001c"
 				document.getElementById('insideFrame').className = "active-dark";
 			}
-	    }		
-        window.requestAnimationFrame(core.OnFrameChange);
+	    }
     }
+    core.RefreshGamePadStatus();
+    window.requestAnimationFrame(core.OnFrameChange);
 }
 
 Grass.cGameCore.prototype.PauseGame = function () {
     if (this.mGameIsPaused) {
         this.mGameIsPaused = false;
-        window.webkitRequestAnimationFrame(Grass.gGameCore.OnFrameChange);
     } else {
         this.mGameIsPaused = true;
     }
@@ -292,7 +286,7 @@ Grass.cGameCore.prototype.TileSelectClickHandler = function() {
         detailsDiv.innerHTML = "Name: " + this.mSelectedTile.mBaseTile.mName;
         detailsDiv.innerHTML += "<br>Tile Index: " + this.mSelectedTile.mIndex;
 		detailsDiv.innerHTML += "<br>Growth Level: " + this.mSelectedTile.mGrowthLevel;
-        detailsDiv.innerHTML += "<br>Has Grass: " + this.mSelectedTile.mHasGrass;//((this.mSelectedTile.mHasGrass == true) ? "Yes" : "No");
+        detailsDiv.innerHTML += "<br>Growth Factor: " + this.mSelectedTile.mGrowthFactor;
         detailsDiv.innerHTML += "<br>Pos X: " + this.mSelectedTile.mPosX;
 		detailsDiv.innerHTML += "<br>Pos Y: " + this.mSelectedTile.mPosY;
 		
@@ -359,6 +353,14 @@ Grass.cGameCore.prototype.HighlightTileByIndex = function (tileIndex) {
 	
 }
 
+Grass.cGameCore.prototype.GetTileByIndex = function (tileIndex) {
+    var tempTile = null;
+    for (var layer in this.mLawnManager.mLayerList) {
+        tempTile = this.mLawnManager.mLayerList[layer].LookupTileByIndex(tileIndex)
+    }   
+	return tempTile;
+}
+
 Grass.cGameCore.prototype.SelectTileByIndex = function (tileIndex) {
     this.HighlightTileByIndex(tileIndex);
     this.TileSelectClickHandler();
@@ -391,6 +393,7 @@ Grass.cGameCore.prototype.HandleEvent = function(type, event, data){
               this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADDISCONNECT, 'gamePadDisconnect', event);
             break;
         case Utils.gEventTypes.KEYDOWN:
+            //console.debug(event.keyCode);
             this.mEventManager.TriggerEvent(Utils.gEventTypes.KEYDOWN, event.keyCode, event.target);
             break;
         case Utils.gEventTypes.KEYUP:

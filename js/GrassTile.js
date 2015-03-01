@@ -7,7 +7,8 @@ Grass.GrassTile = function (baseTile) {
 	this.mIsHighlighted = false;
 	this.mIsSelected = false;
 	this.mHasGrass = false;
-	this.mGrowthLevel = 1;
+	this.mGrowthLevel = 0;
+	this.mGrowthFactor = 1;
 	
 	
 }

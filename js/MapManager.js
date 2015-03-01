@@ -1,4 +1,4 @@
-Utils.cMapManager = function (targetDiv, segmentSize) {
+Utils.cMapManager = function (targetDiv, segmentSize, simCore) {
     this.mRawData = null;
     this.mRawLayers = new Array();
     this.mTotalLayers = 0;
@@ -9,12 +9,13 @@ Utils.cMapManager = function (targetDiv, segmentSize) {
     this.mMapWidth = 0;
     this.mMapHeight = 0;
 	this.mSegmentSize = segmentSize;
+	this.mSimCore = simCore;
     
     this.mLayerList = null;
     
 }
 
-Utils.cMapManager.prototype.LoadMap = function (mapSrc) {
+Utils.cMapManager.prototype.LoadMap = function (mapSrc, simCore) {
     this.ParseMapData([JSON.parse(localStorage[mapSrc])]);
 }
 
@@ -68,7 +69,7 @@ Utils.cMapManager.prototype.ParseMapData = function (jsonData) {
     //load layers    
     i = 0;
     while(i < this.mTotalLayers) {
-        this.mLayerList[i] = new Utils.cMapLayer(this.mRawLayers[i], this.mTileTypeList, this.mTileWidth, this.mTileHeight, this.mSegmentSize);
+        this.mLayerList[i] = new Utils.cMapLayer(this.mRawLayers[i], this.mTileTypeList, this.mTileWidth, this.mTileHeight, this.mSegmentSize, this.mSimCore);
         i++    
     }
     //console.debug(this)
@@ -109,7 +110,7 @@ Utils.cMapTile = function (tileData, offsetX, offsetY) {
  * @param {Object} layerData
  * @param {Object} tileList
  */
-Utils.cMapLayer = function (layerData, tileList, tileWidth, tileHeight, segmentSize) {
+Utils.cMapLayer = function (layerData, tileList, tileWidth, tileHeight, segmentSize, simCore) {
     this.mLayerRawData = layerData;
     this.mLayerData = this.mLayerRawData.data;
     this.mLayerName = this.mLayerRawData.name;
@@ -132,6 +133,7 @@ Utils.cMapLayer = function (layerData, tileList, tileWidth, tileHeight, segmentS
     this.mHighlightImgObj = null;
 	this.mSelectedImgObj = null;
 	this.mGrassClumpImgObj = null;
+	this.mSimCore = simCore;
 	
     this.BuildEmptyTileMap();
 }
@@ -163,6 +165,7 @@ Utils.cMapLayer.prototype.LoadLayerMap = function () {
 				console.debug(this.mTileTypeList,this.mLayerData[i])
 			}
             this.mTileMap[col][row] = currTile;
+			this.mSimCore.RegisterTile(this.mTileMap[col][row]);
         }
         col++;
         if(col >= this.mLayerWidth) {
@@ -180,6 +183,9 @@ Utils.cMapLayer.prototype.LoadLayerMap = function () {
 	
 	this.mGrassClumpImgObj = new Image();
     this.mGrassClumpImgObj.src = "lawn_maps/grass_clump-sm.png";
+
+    this.mLgGrassClumpImgObj = new Image();
+    this.mLgGrassClumpImgObj.src = "lawn_maps/grass_clump1.png";
 
     this.mLayerCanvas.Init((this.mLayerWidth*this.mLayerTileWidth),(this.mLayerHeight*this.mLayerTileHeight+40));
     //console.debug(this.mTileMap)
@@ -237,10 +243,15 @@ Utils.cMapLayer.prototype.BuildLayerCanvas = function(targetDomObj){
 				
 				this.mLayerCanvas.DrawImage(currTile.mBaseTile, (tilePositionX), (tilePositionY), this.mLayerTileHeight, this.mLayerTileWidth);
 				
-                //if (currTile.mHasGrass === true) {
-				if (currTile.mBaseTile.mName === "GrassTile") {
-					var topOffset = 40 - (currTile.mBaseTile.mBlockHeightIndex * 10);
-                    this.mLayerCanvas.DrawBlockDecal(this.mGrassClumpImgObj, topOffset, (tilePositionX), (tilePositionY));
+                if (currTile.mHasGrass === true) {
+				    if (currTile.mGrowthLevel === 1) {
+						var topOffset = 40 - (currTile.mBaseTile.mBlockHeightIndex * 10);
+						this.mLayerCanvas.DrawBlockDecal(this.mGrassClumpImgObj, topOffset, (tilePositionX), (tilePositionY));
+					}
+                    if (currTile.mGrowthLevel === 2) {
+                        var topOffset = 40 - (currTile.mBaseTile.mBlockHeightIndex * 10);
+                        this.mLayerCanvas.DrawBlockDecal(this.mLgGrassClumpImgObj, topOffset, (tilePositionX), (tilePositionY));
+                    }
                 }
 
 				if (currTile.mIsHighlighted === true) {
