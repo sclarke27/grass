@@ -188,16 +188,6 @@
 				
 			}   
             
-            #startButton {
-                padding: 5px;
-                
-            }
-
-            .middle button {
-                padding: 5px;
-                font-size: 29px;
-            }
-
             #gameClock {
                 position: absolute;
                 bottom: 0px;
@@ -258,10 +248,24 @@
                 font-size: 32px;
             }
             
+            #startButton, #pauseButton, #mowButton {
+                padding: 5px;
+                
+            }
+
+            .middle button {
+                padding: 5px;
+                font-size: 29px;
+            }
+
+            .middle #pauseButton, .middle #mowButton{
+                display: none;
+            }
+            
             .top-left {
                 position: relative;
                 top: -35px;
-                width: 250px;            
+                width: 450px;            
             }
             
         </style>
@@ -291,15 +295,19 @@
                     <h1 align="center">Grass Simulator 2015</h1>
                     <div id="openingMenu" class="middle">
                         
-                        <form>
-                            <p>Select a map to begin</p>
-                            <select name="mapSelect" id="mapSelectInput">
-                                <option value="0">Starter Lawn</option>
-                                <option value="1">Pond</option>
-                                <option value="2">Test Map</option>
-                            </select>
-                            <button onclick="Grass.gGameCore.StartMap(document.getElementById('mapSelectInput').selectedIndex)" id="startButton">Start Game</button>
-                        </form>
+                        <p>Select a map to begin</p>
+                        <select name="mapSelect" id="mapSelectInput">
+                            <option value="0">Starter Lawn</option>
+                            <option value="1">Pond</option>
+                            <option value="2">Test Map</option>
+                            <option value="3">Flat Map</option>
+                        </select>
+                        <button onclick="Grass.gGameCore.StartMap(document.getElementById('mapSelectInput').selectedIndex)" id="startButton">Start Game</button>
+                        <button onclick="Grass.gGameCore.MowLawn()" id="mowButton">Mow Lawn</button>
+                        <button onclick="Grass.gGameCore.PauseGame()" id="pauseButton">Pause</button>
+                        <button onclick="Grass.gGameCore.SetSimSpeed(30)" id="mowButton">></button>
+                        <button onclick="Grass.gGameCore.SetSimSpeed(15)" id="mowButton">>></button>
+                        <button onclick="Grass.gGameCore.SetSimSpeed(1)" id="mowButton">>>></button>
                     </div>
                     <div id="tileInfoPanel"></div>
                     <div id="gamePadInfoPanel"></div>

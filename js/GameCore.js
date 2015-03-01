@@ -41,7 +41,7 @@ Grass.cGameCore = function () {
     this.mToolbarCanvas = null;    
 
     this.mMapsPath = ['lawn_maps/', ];
-    this.mMaps = ['start', 'pond1', 'test-map'];
+    this.mMaps = ['start', 'pond1', 'test-map', 'flat'];
 	
     this.mCurrTilesInSegment = [];
     this.mHighlightedTile = null;
@@ -49,24 +49,12 @@ Grass.cGameCore = function () {
     this.mSelectedTile = null;
 	this.mSelectedTileIndex = null;
 	
-	this.mFramesPerGameMinute = 60;
-	
 	this.mGamePads = [];
 	this.mButtonPressed = new Array(16);
 	for(var i=0; i<this.mButtonPressed.length; i++) {
 		this.mButtonPressed[i] = false;
 	} 
 	
-	this.mGameTime = {
-		currHour : 12,
-		currMinute : 0,
-		currTick : 0,
-		framesPerTick : 1,
-		maxMinutes : 60,
-		maxHours : 12,
-		isDaytime : true
-	}
-
     //load up map data into localStorage
     localStorage.clear();
     for(var i=0, l=this.mMaps.length; i<l; i++) {
@@ -310,6 +298,15 @@ Grass.cGameCore.prototype.ListenForEvents = function () {
         }, false);
     }
     
+}
+
+Grass.cGameCore.prototype.MowLawn = function(tileIndex) {
+	this.mSimCore.ClearLawn();
+}
+
+Grass.cGameCore.prototype.SetSimSpeed = function(speed) {
+	this.mGameIsPaused = false;
+    this.mSimCore.mSimTime.framesPerTick = speed;
 }
 
 Grass.cGameCore.prototype.CutGrass = function (tileIndex) {

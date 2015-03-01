@@ -6,13 +6,13 @@ Utils.cSimCore = function() {
     this.mTiles = [];
     this.mCurrFameTime = 0;
     this.mDiceSeed = 10;
-	this.mDiceMultiplier = 5000;
+	this.mDiceMultiplier = 100;
     
     this.mSimTime = {
         currHour: 12,
         currMinute: 0,
         currTick: 0,
-        framesPerTick: 30,
+        framesPerTick: 60,
         maxMinutes: 60,
         maxHours: 12,
         isAM: false,
@@ -48,26 +48,35 @@ Utils.cSimCore.prototype.IsDaytime = function() {
 
 Utils.cSimCore.prototype.RollDice = function(maxChance) {
     var factor = (this.mDiceSeed - maxChance) * this.mDiceMultiplier;
-    return (this.RandomIntFromInterval(1, factor) === (factor / 2))
+    return (this.RandomIntFromInterval(1, factor) === 1)
 }
 
 Utils.cSimCore.prototype.TickSim = function(currTime) {
     this.mCurrFameTime = currTime;
     this.TickClock();
     
+}
+
+Utils.cSimCore.prototype.ClearLawn = function () {
+    for (var i = 0, l = this.mTiles.length; i < l; i++) {
+		this.mTiles[i].mGrowthLevel = 0;
+	}	
+}
+
+Utils.cSimCore.prototype.TickTiles = function () {
     for (var i = 0, l = this.mTiles.length; i < l; i++) {
         var currTile = this.mTiles[i];
         if (currTile.mBaseTile.mName === "GrassTile") {
             this.UpdateGrowthFactor(currTile);
             if (this.RollDice(currTile.mGrowthFactor)) {
-				currTile.mGrowthLevel = Math.min(currTile.mGrowthLevel + 1, 2);
-				/*
-                if (this.RollDice(currTile.mGrowthFactor * 100)) {
+                currTile.mGrowthLevel = Math.min(currTile.mGrowthLevel + 1, 2);
+
+                if (this.RollDice(currTile.mGrowthFactor/2)) {
                     currTile.mGrowthLevel = 0;
-                } else if (this.RollDice(currTile.mGrowthFactor)) {
-                    
-                }
-                */
+                } 
+                if (!this.mSimTime.isDaytime && this.RollDice(currTile.mGrowthFactor*4)) {
+                    currTile.mGrowthLevel = 0;
+                } 
                 
             }
         }
@@ -89,16 +98,29 @@ Utils.cSimCore.prototype.UpdateGrowthFactor = function(tile) {
     //console.debug(tile)
     var startFactor = tile.mBaseTile.mBlockHeightIndex;
     var baseIndex = tile.mIndex;
-    var neighborIndexes = [baseIndex - 15, baseIndex + 15, baseIndex - 1, baseIndex + 1]
+    var neighborIndexes = [
+	   baseIndex - 14, baseIndex - 15, baseIndex - 16, 
+	   baseIndex - 1, baseIndex + 1,
+	   baseIndex + 14, baseIndex + 15, baseIndex + 16 ]
     for (var i = 0, l = neighborIndexes.length; i < l; i++) {
         var nextTile = Grass.gGameCore.GetTileByIndex(neighborIndexes[i]);
 		
         if (nextTile && nextTile.mBaseTile.mName == "Water Tile") {
-            startFactor = startFactor + 5;
+            startFactor = startFactor + 1;
+        }
+		
+        if (nextTile && nextTile.mGrowthLevel > 0) {
+            startFactor = startFactor + nextTile.mGrowthLevel;
         }
     }
     
-    
+	if (tile.mGrowthLevel > 0) {
+	   startFactor = startFactor + 1;
+	}
+    startFactor = (startFactor > 9) ? 10 : startFactor;
+	if(!this.mSimTime.isDaytime) {
+		startFactor = startFactor / 10;
+	}
     tile.mGrowthFactor = startFactor;
 }
 
@@ -107,6 +129,7 @@ Utils.cSimCore.prototype.TickClock = function() {
     if (this.mSimTime.currTick >= this.mSimTime.framesPerTick) {
         this.mSimTime.currMinute++;
         this.mSimTime.currTick = 0;
+		this.TickTiles();
         if (this.mSimTime.currMinute >= 60) {
             this.mSimTime.currMinute = 0;
             this.mSimTime.currHour++;
