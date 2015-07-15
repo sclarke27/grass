@@ -34,6 +34,7 @@ Grass.cGameCore = function () {
     this.mGameIsPaused = true;
     this.mIsTouchUI = null;
 	this.mGameStarted = false;
+	this.mRadialMenu = null;
 	
 	this.mLawnManager = null;	
 	
@@ -100,8 +101,9 @@ Grass.cGameCore.prototype.Init = function () {
 	this.RefreshGamePadStatus();
     this.mMouseTrack = new Utils.MouseTrack(this.mScreenSegmentSize);	
 	
-	
-
+	this.mRadialMenu = new Utils.cRadialMenu();
+	this.mRadialMenu.Init();
+    
 }
 
 Grass.cGameCore.prototype.RefreshGamePadStatus = function () {

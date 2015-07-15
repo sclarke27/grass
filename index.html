@@ -269,7 +269,40 @@
             }
             
         </style>
+        <style>
+            /* this section temp to get radial menu going */
+			#container, #canvasContainer {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				width: 100%;
+				height: 100%;
+			}
+			#mousecircle {
+				border: solid 1px rgba(0,0,0,.5);
+				background-color: rgba(255,255,255,.7);
+				border-radius: 30px;
+				width: 30px;
+				height: 30px;
+				position: absolute;
+				top: -100px;
+				left: -100px;
+			}
+			.innerCircle {
+				position: absolute;
+				border: solid 1px rgba(0,0,0,.8);
+                box-shadow: 0px 0px 15px #000;
+				-webkit-box-shadow: 0px 0px 15px #000;
+				background-color:#FFF;
+				text-align: center;
+				line-height: 40px;
+				font-family: Verdana, Geneva, sans-serif;
+				font-size: 19pt;
+			}            
+        </style>
+		<script type="text/javascript" src="js/lib/raphael.js"></script>
 		<script type="text/javascript" src="js/Namespaces.js"></script>
+		<script type="text/javascript" src="js/SVGUtils.js"></script>
 		<script type="text/javascript" src="js/Sprite.js"></script>
 		<script type="text/javascript" src="js/MouseTrack.js"></script>
 		<script type="text/javascript" src="js/EventManager.js"></script>
@@ -277,6 +310,7 @@
 		<script type="text/javascript" src="js/MapManager.js"></script>
 		<script type="text/javascript" src="js/GrassTile.js"></script>
 		<script type="text/javascript" src="js/DebugPanel.js"></script>
+		<script type="text/javascript" src="js/RadialMenu.js"></script>
 		<script type="text/javascript" src="js/SimCore.js"></script>
 		<script type="text/javascript" src="js/GameCore.js"></script>
 		<script>
@@ -286,6 +320,20 @@
 		</script>
     </head>
     <body onLoad="initGame()">
+		<div id="menuContainer">
+			<div class="debug" style="display:none">
+				<div id="mouseposX">debug</div>
+                <div id="mouseposY">debug</div>
+                <div id="mouseposAng">debug</div>
+			</div>
+			<div id="mousecircle"></div>
+		</div>
+        <div id="canvasContainer">
+            <h1 id="menuTitle">menu text</h1>
+            <canvas id="menuCanvas" width="1024" height="768" style="opacity: .2">
+            </canvas>
+        </div>    
+    
 		<div id="outsideFrame" class="animate">
 			<div id="insideFrame" class="inactive">
             
