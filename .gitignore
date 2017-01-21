@@ -214,3 +214,7 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+.idea/grass.iml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml
