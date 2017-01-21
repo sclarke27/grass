@@ -98,7 +98,7 @@ Grass.cGameCore.prototype.Init = function () {
     }
 
 	this.ListenForEvents();
-	this.RefreshGamePadStatus();
+	//this.RefreshGamePadStatus();
     this.mMouseTrack = new Utils.MouseTrack(this.mScreenSegmentSize);	
 	
 	this.mRadialMenu = new Utils.cRadialMenu();
@@ -139,8 +139,11 @@ Grass.cGameCore.prototype.RefreshGamePadStatus = function () {
 
 Grass.cGameCore.prototype.StartMap = function(mapIndex) {
     var core = this;
-	
-	this.mSimCore.FlushSim();
+	if(this.mSimCore === null) {
+       // this.mSimCore = new Utils.cSimCore();
+    } else {
+        this.mSimCore.FlushSim();
+    }
 	
     if(this.mLawnManager !== null) {
 		this.mLawnManager.ClearMap();
@@ -280,7 +283,7 @@ Grass.cGameCore.prototype.OnFrameChange = function () {
 			}
 	    }
     }
-    core.RefreshGamePadStatus();
+    //core.RefreshGamePadStatus();
     window.requestAnimationFrame(core.OnFrameChange);
 }
 
@@ -462,11 +465,11 @@ Grass.cGameCore.prototype.HandleEvent = function(type, event, data){
               this.mEventManager.TriggerEvent(Utils.gEventTypes.TOUCHEND, event.srcElement.id, event);
             break;
         case Utils.gEventTypes.ONGAMEPADCONNECT:
-			  this.RefreshGamePadStatus();
+			 // this.RefreshGamePadStatus();
               this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADCONNECT, 'gamePadConnect', event);
             break;
         case Utils.gEventTypes.ONGAMEPADDISCONNECT:
-			  this.RefreshGamePadStatus();
+			 // this.RefreshGamePadStatus();
               this.mEventManager.TriggerEvent(Utils.gEventTypes.ONGAMEPADDISCONNECT, 'gamePadDisconnect', event);
             break;
         case Utils.gEventTypes.KEYDOWN:
